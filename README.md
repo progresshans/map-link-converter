@@ -13,8 +13,35 @@
 - 자동 감지 모드
   - 입력 URL 기준으로 각 항목을 자동으로 방향 판별
   - 네이버/카카오 링크가 섞여 있어도 한 번에 변환 가능
+- URL만 입력해도 변환
+  - 상호/주소 없이 URL만 붙여넣어도 자동으로 변환
 - 거리 검증
   - 가능한 경우 좌표를 비교해 거리(m)와 기준 통과 여부 표시
+
+## 입력 형식
+
+네이버지도/카카오맵 앱에서 공유한 텍스트를 그대로 붙여넣으면 됩니다.
+
+```
+[네이버지도]
+상호명
+서울 성북구 개운사길 41-3 1~3층
+https://naver.me/IGs3UqxD
+
+[네이버지도]
+상호명
+서울 성북구 개운사길 21-3 1층
+https://naver.me/x7e0US2z
+```
+
+URL만 입력하는 것도 가능합니다.
+
+```
+https://naver.me/IGs3UqxD
+https://naver.me/x7e0US2z
+```
+
+한 번에 최대 100건까지 변환할 수 있습니다.
 
 ## 폴더 구조
 
@@ -35,7 +62,7 @@ npx wrangler pages dev public
 
 ### 권장: Pages Git 연동
 
-Cloudflare Pages 대시보드에서 GitHub 저장소(`progresshans/map-link-converter-cloudflare`)를 연결하고 아래처럼 설정하세요.
+Cloudflare Pages 대시보드에서 GitHub 저장소를 연결하고 아래처럼 설정하세요.
 
 - Framework preset: `None`
 - Build command: 비움
@@ -61,3 +88,4 @@ npx wrangler pages deploy public --project-name map-link-converter-cloudflare
 
 - Free 플랜은 Worker 요청량 제한이 있습니다(일일 요청 수 제한).
 - 네이버/카카오 측 응답 정책 변경 시 파싱 로직 업데이트가 필요할 수 있습니다.
+- 소스 코드: https://github.com/progresshans/map-link-converter-cloudflare
