@@ -44,7 +44,27 @@
       color: #222;
     }
 
-    .controls input { max-width: 90px; }
+    .controls .distance-field {
+      position: relative;
+      max-width: 100px;
+      flex-shrink: 0;
+    }
+
+    .controls .distance-field input {
+      width: 100%;
+      padding-right: 22px;
+      max-width: none;
+    }
+
+    .controls .distance-field .unit {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.8rem;
+      color: #999;
+      pointer-events: none;
+    }
 
     textarea {
       width: 100%;
@@ -185,6 +205,62 @@
     .badge.fail { background: #fff3e0; color: #e65100; }
     .badge.none { background: #f0f0f0; color: #999; }
 
+    details {
+      margin-bottom: 14px;
+      font-size: 0.85rem;
+      color: #555;
+    }
+
+    details summary {
+      cursor: pointer;
+      color: #666;
+      font-size: 0.85rem;
+      user-select: none;
+      padding: 10px 12px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    details[open] summary {
+      border-bottom: 0;
+      border-radius: 8px 8px 0 0;
+    }
+
+    details .details-body {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-top: 0;
+      border-radius: 0 0 8px 8px;
+      padding: 10px 12px;
+    }
+
+    details .details-body p {
+      margin-bottom: 8px;
+    }
+
+    details .example {
+      background: #f8f8f8;
+      border: 0;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font: 0.8rem/1.4 monospace;
+      white-space: pre-wrap;
+      color: #444;
+    }
+
+    .footer {
+      margin-top: 20px;
+      padding-top: 12px;
+      border-top: 1px solid #e0e0e0;
+      text-align: center;
+      font-size: 0.75rem;
+      color: #aaa;
+    }
+
+    .footer a { color: #999; }
+
     a { color: #4a90d9; text-decoration: none; word-break: break-all; }
     a:hover { text-decoration: underline; }
 
@@ -195,13 +271,32 @@
   <main class="wrap">
     <h1>지도 링크 변환기</h1>
 
+    <details>
+      <summary>사용법</summary>
+      <div class="details-body">
+        <p>네이버지도 또는 카카오맵에서 공유한 텍스트를 붙여넣으면 상대 플랫폼 링크로 변환합니다. 거리 기준값(m) 이내면 검증 통과로 표시됩니다.</p>
+        <div class="example">[네이버지도]
+일월의제면소
+서울 성북구 개운사길 41-3 1~3층
+https://naver.me/IGs3UqxD
+
+[네이버지도]
+면림
+서울 성북구 개운사길 21-3 1층
+https://naver.me/x7e0US2z</div>
+      </div>
+    </details>
+
     <div class="controls">
       <select id="direction">
         <option value="auto" selected>자동 감지</option>
         <option value="naver_to_kakao">네이버 → 카카오</option>
         <option value="kakao_to_naver">카카오 → 네이버</option>
       </select>
-      <input id="maxDistance" type="number" min="0" step="10" value="300" placeholder="거리(m)" />
+      <div class="distance-field">
+        <input id="maxDistance" type="number" min="0" step="10" value="300" placeholder="300" title="거리 기준(m)" />
+        <span class="unit">m</span>
+      </div>
     </div>
 
     <textarea id="input" spellcheck="false" placeholder="상호명&#10;주소&#10;https://naver.me/...&#10;&#10;상호명&#10;주소&#10;https://naver.me/..."></textarea>
@@ -238,6 +333,10 @@
           <tbody></tbody>
         </table>
       </div>
+    </div>
+
+    <div class="footer">
+      <a href="https://github.com/progresshans/map-link-converter-cloudflare" target="_blank" rel="noopener">GitHub</a>
     </div>
   </main>
 
