@@ -17,13 +17,14 @@ export function onRequestOptions() {
 export async function onRequestPost({ request }) {
   try {
     const body = await request.json();
-    const direction = normalizeSpace(body.direction);
+    const requestedDirection = normalizeSpace(body.direction || "auto");
     const maxDistanceMeters =
       toNumber(body.maxDistanceMeters) ?? DEFAULT_MAX_DISTANCE_METERS;
 
     if (
-      direction !== "naver_to_kakao" &&
-      direction !== "kakao_to_naver"
+      requestedDirection !== "auto" &&
+      requestedDirection !== "naver_to_kakao" &&
+      requestedDirection !== "kakao_to_naver"
     ) {
       return json({ error: "direction 값이 올바르지 않습니다." }, 400);
     }
@@ -39,10 +40,12 @@ export async function onRequestPost({ request }) {
     const results = [];
     for (const entry of entries) {
       try {
-        const row =
-          direction === "naver_to_kakao"
-            ? await convertNaverToKakao(entry, maxDistanceMeters)
-            : await convertKakaoToNaver(entry, maxDistanceMeters);
+        const direction = resolveDirectionForEntry(entry, requestedDirection);
+        if (!direction) {
+          throw new Error("방향 자동 감지 실패: URL 또는 [네이버지도]/[카카오맵] 표기를 확인해주세요.");
+        }
+
+        const row = await convertByDirection(entry, direction, maxDistanceMeters);
         results.push(row);
       } catch (err) {
         results.push({
@@ -55,7 +58,7 @@ export async function onRequestPost({ request }) {
 
     return json({
       ok: true,
-      direction,
+      direction: requestedDirection,
       maxDistanceMeters,
       results,
     });
@@ -82,6 +85,12 @@ function sanitizeEntry(entry, fallbackIndex) {
     sourceUrl: normalizeSpace(entry?.sourceUrl),
     rawBlock: typeof entry?.rawBlock === "string" ? entry.rawBlock : "",
   };
+}
+
+async function convertByDirection(source, direction, maxDistanceMeters) {
+  return direction === "naver_to_kakao"
+    ? convertNaverToKakao(source, maxDistanceMeters)
+    : convertKakaoToNaver(source, maxDistanceMeters);
 }
 
 async function convertNaverToKakao(source, maxDistanceMeters) {
@@ -120,6 +129,7 @@ async function convertNaverToKakao(source, maxDistanceMeters) {
 
   return {
     ok: true,
+    direction: "naver_to_kakao",
     source,
     targetUrl: `https://place.map.kakao.com/${picked.confirmid}`,
     targetName: picked.name,
@@ -170,6 +180,7 @@ async function convertKakaoToNaver(source, maxDistanceMeters) {
 
   return {
     ok: true,
+    direction: "kakao_to_naver",
     source,
     targetUrl: `https://map.naver.com/p/entry/place/${picked.placeId}`,
     targetName: picked.name,
@@ -203,6 +214,16 @@ async function buildNaverSourceInfo(source) {
       for (const url of chain) {
         applyNaverUrlMeta(url, info);
       }
+    }
+  }
+
+  if (info.placeId && (!info.name || !info.address || info.lat === null || info.lng === null)) {
+    const summary = await fetchNaverPlaceSummary(info.placeId);
+    if (summary) {
+      if (!info.name) info.name = summary.name;
+      if (!info.address) info.address = summary.address;
+      if (info.lat === null) info.lat = summary.lat;
+      if (info.lng === null) info.lng = summary.lng;
     }
   }
 
@@ -333,6 +354,47 @@ function applyNaverUrlMeta(url, info) {
   }
 }
 
+function resolveDirectionForEntry(entry, requestedDirection) {
+  if (requestedDirection === "naver_to_kakao" || requestedDirection === "kakao_to_naver") {
+    return requestedDirection;
+  }
+
+  const byUrl = detectDirectionByUrl(entry.sourceUrl);
+  if (byUrl) return byUrl;
+
+  const byTag = detectDirectionByRawBlock(entry.rawBlock);
+  if (byTag) return byTag;
+
+  return null;
+}
+
+function detectDirectionByUrl(url) {
+  const v = normalizeSpace(url).toLowerCase();
+  if (!v) return null;
+
+  if (
+    /naver\.me\//.test(v) ||
+    /map\.naver\.com\//.test(v) ||
+    /m\.place\.naver\.com\/place\//.test(v)
+  ) {
+    return "naver_to_kakao";
+  }
+
+  if (/place\.map\.kakao\.com\/\d+/.test(v) || /map\.kakao\.com\//.test(v)) {
+    return "kakao_to_naver";
+  }
+
+  return null;
+}
+
+function detectDirectionByRawBlock(rawBlock) {
+  const v = normalizeSpace(rawBlock);
+  if (!v) return null;
+  if (/\[네이버지도\]/.test(v)) return "naver_to_kakao";
+  if (/\[카카오맵\]/.test(v)) return "kakao_to_naver";
+  return null;
+}
+
 async function searchKakaoCandidates(query) {
   const url =
     "https://search.map.kakao.com/mapsearch/map.daum?output=json&q=" +
@@ -371,6 +433,44 @@ async function searchKakaoCandidates(query) {
       lng: toNumber(place.lon),
     }))
     .filter((place) => place.confirmid);
+}
+
+async function fetchNaverPlaceSummary(placeId) {
+  const safeId = normalizeSpace(placeId);
+  if (!/^\d+$/.test(safeId)) return null;
+
+  const url = `https://map.naver.com/p/api/place/summary/${encodeURIComponent(safeId)}`;
+  const response = await fetch(url, {
+    headers: {
+      referer: `https://map.naver.com/p/entry/place/${safeId}`,
+      "user-agent": USER_AGENT,
+      accept: "application/json,text/plain,*/*",
+    },
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  let data;
+  try {
+    data = await response.json();
+  } catch (_err) {
+    return null;
+  }
+
+  const detail = data?.data?.placeDetail;
+  if (!detail) return null;
+
+  return {
+    placeId: safeId,
+    name: normalizeSpace(detail.name || ""),
+    address: normalizeSpace(
+      detail?.address?.roadAddress || detail?.address?.address || ""
+    ),
+    lat: toNumber(detail?.coordinate?.latitude),
+    lng: toNumber(detail?.coordinate?.longitude),
+  };
 }
 
 async function fetchKakaoPlaceInfo(placeId) {

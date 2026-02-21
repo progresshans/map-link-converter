@@ -197,6 +197,7 @@
 
     <div class="controls">
       <select id="direction">
+        <option value="auto" selected>자동 감지</option>
         <option value="naver_to_kakao">네이버 → 카카오</option>
         <option value="kakao_to_naver">카카오 → 네이버</option>
       </select>
@@ -309,7 +310,9 @@
     }
 
     function getTargetLabel(direction) {
-      return direction === "naver_to_kakao" ? "[카카오맵]" : "[네이버지도]";
+      if (direction === "naver_to_kakao") return "[카카오맵]";
+      if (direction === "kakao_to_naver") return "[네이버지도]";
+      return "[변환결과]";
     }
 
     function escapeHtml(v) {
@@ -330,9 +333,11 @@
     function renderResults(results, direction) {
       const textBlocks = [];
       const rows = [];
-      const targetLabel = getTargetLabel(direction);
 
       for (const item of results) {
+        const rowDirection = item.direction || direction;
+        const targetLabel = getTargetLabel(rowDirection);
+
         if (item.ok) {
           textBlocks.push(
             [targetLabel, item.targetName, item.targetAddress || "", item.targetUrl].join("\n")
@@ -346,7 +351,7 @@
             <tr>
               <td>${item.source.index}</td>
               <td><span class="pill ok">성공</span></td>
-              <td>${escapeHtml(item.source.name || "(없음)")}</td>
+              <td>${escapeHtml(item.targetName || item.source.name || "(없음)")}</td>
               <td>${distanceText}</td>
               <td>${badgeForDistancePass(item.distancePass)}</td>
               <td><a href="${escapeHtml(item.targetUrl)}" target="_blank" rel="noopener">${escapeHtml(item.targetUrl)}</a></td>
