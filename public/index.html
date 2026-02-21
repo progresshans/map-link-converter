@@ -273,8 +273,23 @@
           .filter(Boolean)
           .filter((line) => !/^\[[^\]]+\]$/.test(line));
 
-        const sourceUrl = lines.find((line) => /^https?:\/\//i.test(line)) || "";
+        const urlLines = lines.filter((line) => /^https?:\/\//i.test(line));
+        const sourceUrl = urlLines[0] || "";
         const nonUrl = lines.filter((line) => !/^https?:\/\//i.test(line));
+
+        // URL만 여러 줄로 들어온 경우, 각 URL을 개별 엔트리로 처리
+        if (urlLines.length > 1 && nonUrl.length === 0) {
+          for (let j = 0; j < urlLines.length; j += 1) {
+            entries.push({
+              index: entries.length + 1,
+              name: "",
+              address: "",
+              sourceUrl: urlLines[j],
+              rawBlock: urlLines[j],
+            });
+          }
+          continue;
+        }
 
         const name = nonUrl[0] || "";
         const address = nonUrl.slice(1).join(" ").trim();

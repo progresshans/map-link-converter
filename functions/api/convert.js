@@ -207,7 +207,7 @@ async function buildNaverSourceInfo(source) {
   }
 
   if (!info.name || !info.address || info.lat === null || info.lng === null) {
-    const query = [source.name, stripAddressDetail(source.address)]
+    const query = [info.name, stripAddressDetail(info.address)]
       .filter(Boolean)
       .join(" ")
       .trim();
@@ -309,6 +309,11 @@ async function resolveRedirectChain(startUrl, maxHops, extraHeaders = {}) {
 function applyNaverUrlMeta(url, info) {
   const parsed = tryParseUrl(url);
   if (!parsed) return;
+
+  const title = normalizeSpace(parsed.searchParams.get("title"));
+  if (title && !info.name) {
+    info.name = title;
+  }
 
   const lat = toNumber(parsed.searchParams.get("lat"));
   const lng = toNumber(parsed.searchParams.get("lng"));
