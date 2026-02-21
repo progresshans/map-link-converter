@@ -3,377 +3,253 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>지도 텍스트 링크 변환기</title>
+  <title>지도 링크 변환기</title>
   <style>
-    :root {
-      --bg: #f3efe8;
-      --panel: #ffffff;
-      --line: #e0d8cb;
-      --ink: #1f1d18;
-      --sub: #5f5a50;
-      --brand: #ffcd00;
-      --brand-ink: #2b2100;
-      --ok: #0d7a42;
-      --warn: #b65d00;
-      --bad: #b42318;
-      --shadow: 0 12px 28px rgba(26, 22, 14, 0.08);
-    }
-
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; }
 
     body {
-      margin: 0;
-      background:
-        radial-gradient(circle at 12% 8%, rgba(255, 205, 0, 0.24), rgba(255, 205, 0, 0) 34%),
-        radial-gradient(circle at 88% 2%, rgba(89, 149, 255, 0.18), rgba(89, 149, 255, 0) 28%),
-        var(--bg);
-      color: var(--ink);
-      font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", system-ui, -apple-system, sans-serif;
-      line-height: 1.45;
+      background: #f5f5f5;
+      color: #222;
+      font-family: -apple-system, "Apple SD Gothic Neo", "Pretendard", system-ui, sans-serif;
+      line-height: 1.5;
+      -webkit-text-size-adjust: 100%;
     }
 
-    .wrap { max-width: 1120px; margin: 24px auto; padding: 0 16px 24px; }
-
-    .hero {
-      background: linear-gradient(110deg, #fff 0%, #fff8d6 100%);
-      border: 1px solid #efe4c1;
-      border-radius: 20px;
-      padding: 22px 20px;
-      box-shadow: var(--shadow);
+    .wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px 16px;
     }
 
-    h1 { margin: 0 0 10px; font-size: clamp(1.25rem, 3vw, 1.8rem); letter-spacing: -0.02em; }
-
-    .hero p { margin: 0; color: var(--sub); font-size: 0.95rem; }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-top: 14px;
+    h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 16px;
     }
-
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 14px;
-      box-shadow: var(--shadow);
-      min-height: 180px;
-    }
-
-    .card h2 { margin: 0 0 10px; font-size: 1rem; letter-spacing: -0.01em; }
 
     .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
       gap: 8px;
       margin-bottom: 10px;
     }
 
-    .field {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: #514b3f;
+    .controls select,
+    .controls input {
+      flex: 1;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 8px 10px;
       font-size: 0.9rem;
-      font-weight: 700;
+      background: #fff;
+      color: #222;
     }
 
-    .field select,
-    .field input {
-      width: 100%;
-      border: 1px solid #d8d2c7;
-      border-radius: 10px;
-      padding: 8px 10px;
-      background: #fff;
-      color: #2a251b;
-      font-weight: 700;
-    }
+    .controls input { max-width: 90px; }
 
     textarea {
       width: 100%;
-      min-height: 270px;
+      min-height: 200px;
       resize: vertical;
-      padding: 12px;
-      border: 1px solid #d8d2c7;
-      border-radius: 12px;
-      font: 0.92rem/1.42 "SFMono-Regular", Menlo, Consolas, monospace;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font: 0.85rem/1.4 monospace;
       background: #fff;
-      color: #1c1a15;
+      color: #222;
     }
 
     textarea:focus,
-    .field select:focus,
-    .field input:focus {
-      outline: 2px solid #ffd53b;
-      outline-offset: 1px;
+    .controls select:focus,
+    .controls input:focus {
+      outline: 2px solid #4a90d9;
+      outline-offset: -1px;
     }
 
     .actions {
       display: flex;
-      flex-wrap: wrap;
       gap: 8px;
       margin-top: 10px;
     }
 
     button {
       border: 0;
-      border-radius: 10px;
-      padding: 9px 12px;
-      font-weight: 700;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: transform 120ms ease, opacity 120ms ease;
+      transition: opacity 0.15s;
     }
 
-    button:hover { transform: translateY(-1px); }
-    button:active { transform: translateY(0); }
+    button:active { opacity: 0.7; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    button:disabled {
-      cursor: not-allowed;
-      opacity: 0.62;
-      transform: none;
-    }
-
-    .primary { background: var(--brand); color: var(--brand-ink); }
-
-    .ghost {
-      background: #f6f3ec;
-      color: #2f2a1f;
-      border: 1px solid #dfd8cd;
-    }
+    .primary { background: #222; color: #fff; flex: 1; }
+    .ghost { background: #e8e8e8; color: #444; }
 
     .status {
-      margin-top: 10px;
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: #888;
       min-height: 20px;
-      color: var(--sub);
-      font-size: 0.9rem;
+    }
+    .status.ok { color: #0d7a42; }
+    .status.warn { color: #b65d00; }
+    .status.bad { color: #c0392b; }
+
+    .divider {
+      border: 0;
+      border-top: 1px solid #e0e0e0;
+      margin: 16px 0;
     }
 
-    .status.ok { color: var(--ok); }
-    .status.warn { color: var(--warn); }
-    .status.bad { color: var(--bad); }
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .result-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .copy-btn {
+      background: none;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      color: #555;
+    }
 
     .resultbox {
       width: 100%;
-      min-height: 260px;
-      max-height: 420px;
+      min-height: 120px;
+      max-height: 300px;
       overflow: auto;
-      border: 1px solid #d8d2c7;
-      border-radius: 12px;
-      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
       background: #fff;
-      font: 0.9rem/1.45 "SFMono-Regular", Menlo, Consolas, monospace;
+      font: 0.85rem/1.4 monospace;
       white-space: pre-wrap;
     }
 
     .tablewrap {
-      margin-top: 12px;
-      overflow: auto;
-      border: 1px solid #ded7ca;
-      border-radius: 12px;
+      margin-top: 10px;
+      overflow-x: auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      -webkit-overflow-scrolling: touch;
     }
 
-    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 
-    th,
-    td {
-      border-bottom: 1px solid #ece6da;
-      padding: 8px 9px;
-      vertical-align: top;
+    th, td {
+      border-bottom: 1px solid #eee;
+      padding: 7px 8px;
       text-align: left;
+      white-space: nowrap;
     }
 
     th {
-      background: #f8f5ee;
-      font-size: 0.82rem;
-      color: #5f5a50;
+      background: #fafafa;
+      font-size: 0.75rem;
+      color: #888;
       position: sticky;
       top: 0;
-      z-index: 1;
     }
 
     tr:last-child td { border-bottom: 0; }
 
     .pill {
       display: inline-block;
-      border-radius: 999px;
-      padding: 2px 8px;
-      font-size: 0.76rem;
-      font-weight: 700;
-      border: 1px solid;
-      white-space: nowrap;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
     }
-
-    .pill.ok {
-      color: #0d7a42;
-      background: #ecfff4;
-      border-color: #9ad8b6;
-    }
-
-    .pill.bad {
-      color: #9c1f15;
-      background: #fff0ee;
-      border-color: #f0b5af;
-    }
+    .pill.ok { color: #0d7a42; background: #e9f8ef; }
+    .pill.bad { color: #c0392b; background: #fdecea; }
 
     .badge {
       display: inline-block;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      line-height: 1;
-      padding: 4px 7px;
-      font-weight: 700;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      padding: 1px 6px;
+      font-weight: 600;
     }
+    .badge.pass { background: #e9f8ef; color: #0d7a42; }
+    .badge.fail { background: #fff3e0; color: #e65100; }
+    .badge.none { background: #f0f0f0; color: #999; }
 
-    .badge.pass { background: #e9f8ef; color: #0c6f3c; border: 1px solid #9ad8b6; }
-    .badge.fail { background: #fff1e8; color: #a65000; border: 1px solid #efbf94; }
-    .badge.none { background: #f5f2ec; color: #6d665c; border: 1px solid #ddd4c5; }
-
-    .foot {
-      margin-top: 12px;
-      color: #5f5a50;
-      font-size: 0.85rem;
-      border-top: 1px dashed #d8cfc0;
-      padding-top: 8px;
-    }
-
-    .foot code {
-      background: #f5f0e6;
-      padding: 1px 5px;
-      border-radius: 6px;
-    }
-
-    a { color: #0059b8; text-decoration: none; word-break: break-all; }
+    a { color: #4a90d9; text-decoration: none; word-break: break-all; }
     a:hover { text-decoration: underline; }
 
-    @media (max-width: 900px) {
-      .grid { grid-template-columns: 1fr; }
-      .controls { grid-template-columns: 1fr; }
-      textarea, .resultbox { min-height: 220px; }
-    }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
   <main class="wrap">
-    <section class="hero">
-      <h1>지도 텍스트 링크 변환기</h1>
-      <p>
-        Cloudflare Pages + Worker(Functions) 기반입니다.
-        네이버/카카오 링크를 서로 변환하고, 가능할 때 좌표 거리 검증도 같이 표시합니다.
-      </p>
-    </section>
+    <h1>지도 링크 변환기</h1>
 
-    <section class="grid">
-      <article class="card">
-        <h2>입력</h2>
+    <div class="controls">
+      <select id="direction">
+        <option value="naver_to_kakao">네이버 → 카카오</option>
+        <option value="kakao_to_naver">카카오 → 네이버</option>
+      </select>
+      <input id="maxDistance" type="number" min="0" step="10" value="300" placeholder="거리(m)" />
+    </div>
 
-        <div class="controls">
-          <label class="field" for="direction">
-            <span>변환 방향</span>
-            <select id="direction">
-              <option value="naver_to_kakao">네이버 -> 카카오</option>
-              <option value="kakao_to_naver">카카오 -> 네이버</option>
-            </select>
-          </label>
+    <textarea id="input" spellcheck="false" placeholder="상호명&#10;주소&#10;https://naver.me/...&#10;&#10;상호명&#10;주소&#10;https://naver.me/..."></textarea>
 
-          <label class="field" for="maxDistance">
-            <span>거리 기준(m)</span>
-            <input id="maxDistance" type="number" min="0" step="10" value="300" />
-          </label>
-        </div>
+    <div class="actions">
+      <button class="primary" id="convertBtn">변환</button>
+      <button class="ghost" id="clearBtn">초기화</button>
+    </div>
 
-        <textarea id="input" spellcheck="false" placeholder="[네이버지도]\n상호명\n주소\nhttps://naver.me/...\n\n..."></textarea>
+    <div id="status" class="status"></div>
 
-        <div class="actions">
-          <button class="primary" id="convertBtn">변환하기</button>
-          <button class="ghost" id="sampleBtn">샘플 넣기</button>
-          <button class="ghost" id="clearBtn">초기화</button>
-        </div>
+    <div id="resultSection" class="hidden">
+      <hr class="divider" />
 
-        <div id="status" class="status">대기 중</div>
-      </article>
-
-      <article class="card">
+      <div class="result-header">
         <h2>결과</h2>
-        <div id="resultText" class="resultbox"></div>
+        <button class="copy-btn" id="copyBtn">복사</button>
+      </div>
 
-        <div class="actions">
-          <button class="ghost" id="copyBtn">결과 복사</button>
-        </div>
+      <div id="resultText" class="resultbox"></div>
 
-        <div class="tablewrap">
-          <table id="resultTable">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>상태</th>
-                <th>입력 상호</th>
-                <th>거리(m)</th>
-                <th>검증</th>
-                <th>변환 링크</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-        <div class="foot">
-          변환 API는 <code>/api/convert</code> 입니다. 로컬에서는 <code>wrangler pages dev</code>로 실행하세요.
-        </div>
-      </article>
-    </section>
+      <div class="tablewrap">
+        <table id="resultTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>상태</th>
+              <th>상호</th>
+              <th>거리</th>
+              <th>검증</th>
+              <th>링크</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
   </main>
 
   <script>
-    const sampleNaverText = `[네이버지도]
-일월의제면소
-서울 성북구 개운사길 41-3 1~3층
-https://naver.me/IGs3UqxD
-
-[네이버지도]
-면림
-서울 성북구 개운사길 21-3 1층
-https://naver.me/x7e0US2z
-
-[네이버지도]
-특별식당
-서울 성북구 개운사길 22-6 2층
-https://naver.me/5DZiCXWG
-
-[네이버지도]
-효이당
-서울 성북구 고려대로27길 30-2
-https://naver.me/50BH80WH`;
-
-    const sampleKakaoText = `[카카오맵]
-일월의제면소
-서울 성북구 개운사길 41-3 1-3층
-https://place.map.kakao.com/2073306137
-
-[카카오맵]
-면림
-서울 성북구 개운사길 21-3 1층
-https://place.map.kakao.com/439912842
-
-[카카오맵]
-특별식당
-서울 성북구 개운사길 22-6 2층
-https://place.map.kakao.com/2040703324
-
-[카카오맵]
-효이당
-서울 성북구 고려대로27길 30-2 1층
-https://place.map.kakao.com/1030080486`;
-
     const inputEl = document.getElementById("input");
     const directionEl = document.getElementById("direction");
     const maxDistanceEl = document.getElementById("maxDistance");
     const statusEl = document.getElementById("status");
+    const resultSection = document.getElementById("resultSection");
     const resultTextEl = document.getElementById("resultText");
     const resultTableBody = document.querySelector("#resultTable tbody");
     const convertBtn = document.getElementById("convertBtn");
-    const sampleBtn = document.getElementById("sampleBtn");
+
     const clearBtn = document.getElementById("clearBtn");
     const copyBtn = document.getElementById("copyBtn");
 
@@ -430,17 +306,9 @@ https://place.map.kakao.com/1030080486`;
         .replace(/'/g, "&#39;");
     }
 
-    function escapeAttr(v) {
-      return escapeHtml(v);
-    }
-
     function badgeForDistancePass(distancePass) {
-      if (distancePass === true) {
-        return '<span class="badge pass">통과</span>';
-      }
-      if (distancePass === false) {
-        return '<span class="badge fail">불통과</span>';
-      }
+      if (distancePass === true) return '<span class="badge pass">통과</span>';
+      if (distancePass === false) return '<span class="badge fail">불통과</span>';
       return '<span class="badge none">미측정</span>';
     }
 
@@ -452,12 +320,7 @@ https://place.map.kakao.com/1030080486`;
       for (const item of results) {
         if (item.ok) {
           textBlocks.push(
-            [
-              targetLabel,
-              item.targetName,
-              item.targetAddress || "",
-              item.targetUrl,
-            ].join("\n")
+            [targetLabel, item.targetName, item.targetAddress || "", item.targetUrl].join("\n")
           );
 
           const distanceText = Number.isFinite(item.distanceMeters)
@@ -468,27 +331,22 @@ https://place.map.kakao.com/1030080486`;
             <tr>
               <td>${item.source.index}</td>
               <td><span class="pill ok">성공</span></td>
-              <td>${escapeHtml(item.source.name || "(이름 없음)")}</td>
+              <td>${escapeHtml(item.source.name || "(없음)")}</td>
               <td>${distanceText}</td>
               <td>${badgeForDistancePass(item.distancePass)}</td>
-              <td><a href="${escapeAttr(item.targetUrl)}" target="_blank" rel="noopener">${escapeHtml(item.targetUrl)}</a></td>
+              <td><a href="${escapeHtml(item.targetUrl)}" target="_blank" rel="noopener">${escapeHtml(item.targetUrl)}</a></td>
             </tr>
           `);
         } else {
           textBlocks.push(
-            [
-              targetLabel,
-              item.source.name || "(이름 없음)",
-              item.source.address || "(주소 없음)",
-              `변환 실패: ${item.error}`,
-            ].join("\n")
+            [targetLabel, item.source.name || "(없음)", item.source.address || "", `실패: ${item.error}`].join("\n")
           );
 
           rows.push(`
             <tr>
               <td>${item.source.index}</td>
               <td><span class="pill bad">실패</span></td>
-              <td>${escapeHtml(item.source.name || "(이름 없음)")}</td>
+              <td>${escapeHtml(item.source.name || "(없음)")}</td>
               <td>-</td>
               <td>${badgeForDistancePass(null)}</td>
               <td>-</td>
@@ -499,6 +357,7 @@ https://place.map.kakao.com/1030080486`;
 
       resultTextEl.textContent = textBlocks.join("\n\n");
       resultTableBody.innerHTML = rows.join("");
+      resultSection.classList.remove("hidden");
     }
 
     async function callConvertApi(payload) {
@@ -522,19 +381,18 @@ https://place.map.kakao.com/1030080486`;
       const maxDistanceMeters = Number(maxDistanceEl.value) || 300;
 
       if (entries.length === 0) {
-        setStatus("입력 블록을 찾지 못했습니다.", "bad");
-        resultTextEl.textContent = "";
-        resultTableBody.innerHTML = "";
+        setStatus("입력 내용을 확인해주세요.", "bad");
+        resultSection.classList.add("hidden");
         return;
       }
 
       convertBtn.disabled = true;
-      sampleBtn.disabled = true;
+
       clearBtn.disabled = true;
       copyBtn.disabled = true;
 
       try {
-        setStatus(`변환 요청 중... (${entries.length}건)`);
+        setStatus(`변환 중... (${entries.length}건)`);
         const data = await callConvertApi({ direction, entries, maxDistanceMeters });
         renderResults(data.results, direction);
 
@@ -542,42 +400,31 @@ https://place.map.kakao.com/1030080486`;
         const failCount = data.results.length - successCount;
 
         if (failCount === 0) {
-          setStatus(`완료: ${successCount}건 성공`, "ok");
+          setStatus(`${successCount}건 변환 완료`, "ok");
         } else if (successCount > 0) {
-          setStatus(`완료: 성공 ${successCount}건, 실패 ${failCount}건`, "warn");
+          setStatus(`성공 ${successCount}건, 실패 ${failCount}건`, "warn");
         } else {
-          setStatus(`완료: 실패 ${failCount}건`, "bad");
+          setStatus(`${failCount}건 실패`, "bad");
         }
       } catch (err) {
         setStatus(err instanceof Error ? err.message : String(err), "bad");
       } finally {
         convertBtn.disabled = false;
-        sampleBtn.disabled = false;
+
         clearBtn.disabled = false;
         copyBtn.disabled = false;
       }
     }
 
-    sampleBtn.addEventListener("click", () => {
-      inputEl.value = directionEl.value === "naver_to_kakao" ? sampleNaverText : sampleKakaoText;
-      setStatus("샘플 입력 완료");
-    });
-
     clearBtn.addEventListener("click", () => {
       inputEl.value = "";
       resultTextEl.textContent = "";
       resultTableBody.innerHTML = "";
-      setStatus("초기화됨");
+      resultSection.classList.add("hidden");
+      setStatus("");
     });
 
     convertBtn.addEventListener("click", convertAll);
-
-    directionEl.addEventListener("change", () => {
-      inputEl.value = directionEl.value === "naver_to_kakao" ? sampleNaverText : sampleKakaoText;
-      resultTextEl.textContent = "";
-      resultTableBody.innerHTML = "";
-      setStatus("변환 방향을 바꿨습니다. 샘플도 함께 갱신했습니다.");
-    });
 
     copyBtn.addEventListener("click", async () => {
       const text = resultTextEl.textContent.trim();
@@ -588,14 +435,11 @@ https://place.map.kakao.com/1030080486`;
 
       try {
         await navigator.clipboard.writeText(text);
-        setStatus("결과를 클립보드에 복사했습니다.", "ok");
+        setStatus("복사됨", "ok");
       } catch (_err) {
-        setStatus("복사에 실패했습니다. 브라우저 권한을 확인해주세요.", "bad");
+        setStatus("복사 실패", "bad");
       }
     });
-
-    inputEl.value = sampleNaverText;
-    setStatus("샘플이 자동으로 채워져 있습니다.");
   </script>
 </body>
 </html>
