@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>지도 텍스트 링크 변환기</title>
+  <style>
+    :root {
+      --bg: #f3efe8;
+      --panel: #ffffff;
+      --line: #e0d8cb;
+      --ink: #1f1d18;
+      --sub: #5f5a50;
+      --brand: #ffcd00;
+      --brand-ink: #2b2100;
+      --ok: #0d7a42;
+      --warn: #b65d00;
+      --bad: #b42318;
+      --shadow: 0 12px 28px rgba(26, 22, 14, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(255, 205, 0, 0.24), rgba(255, 205, 0, 0) 34%),
+        radial-gradient(circle at 88% 2%, rgba(89, 149, 255, 0.18), rgba(89, 149, 255, 0) 28%),
+        var(--bg);
+      color: var(--ink);
+      font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", system-ui, -apple-system, sans-serif;
+      line-height: 1.45;
+    }
+
+    .wrap { max-width: 1120px; margin: 24px auto; padding: 0 16px 24px; }
+
+    .hero {
+      background: linear-gradient(110deg, #fff 0%, #fff8d6 100%);
+      border: 1px solid #efe4c1;
+      border-radius: 20px;
+      padding: 22px 20px;
+      box-shadow: var(--shadow);
+    }
+
+    h1 { margin: 0 0 10px; font-size: clamp(1.25rem, 3vw, 1.8rem); letter-spacing: -0.02em; }
+
+    .hero p { margin: 0; color: var(--sub); font-size: 0.95rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+      min-height: 180px;
+    }
+
+    .card h2 { margin: 0 0 10px; font-size: 1rem; letter-spacing: -0.01em; }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #514b3f;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .field select,
+    .field input {
+      width: 100%;
+      border: 1px solid #d8d2c7;
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #fff;
+      color: #2a251b;
+      font-weight: 700;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 270px;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid #d8d2c7;
+      border-radius: 12px;
+      font: 0.92rem/1.42 "SFMono-Regular", Menlo, Consolas, monospace;
+      background: #fff;
+      color: #1c1a15;
+    }
+
+    textarea:focus,
+    .field select:focus,
+    .field input:focus {
+      outline: 2px solid #ffd53b;
+      outline-offset: 1px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 120ms ease, opacity 120ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.62;
+      transform: none;
+    }
+
+    .primary { background: var(--brand); color: var(--brand-ink); }
+
+    .ghost {
+      background: #f6f3ec;
+      color: #2f2a1f;
+      border: 1px solid #dfd8cd;
+    }
+
+    .status {
+      margin-top: 10px;
+      min-height: 20px;
+      color: var(--sub);
+      font-size: 0.9rem;
+    }
+
+    .status.ok { color: var(--ok); }
+    .status.warn { color: var(--warn); }
+    .status.bad { color: var(--bad); }
+
+    .resultbox {
+      width: 100%;
+      min-height: 260px;
+      max-height: 420px;
+      overflow: auto;
+      border: 1px solid #d8d2c7;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+      font: 0.9rem/1.45 "SFMono-Regular", Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+    }
+
+    .tablewrap {
+      margin-top: 12px;
+      overflow: auto;
+      border: 1px solid #ded7ca;
+      border-radius: 12px;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+
+    th,
+    td {
+      border-bottom: 1px solid #ece6da;
+      padding: 8px 9px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #f8f5ee;
+      font-size: 0.82rem;
+      color: #5f5a50;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+
+    .pill.ok {
+      color: #0d7a42;
+      background: #ecfff4;
+      border-color: #9ad8b6;
+    }
+
+    .pill.bad {
+      color: #9c1f15;
+      background: #fff0ee;
+      border-color: #f0b5af;
+    }
+
+    .badge {
+      display: inline-block;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      line-height: 1;
+      padding: 4px 7px;
+      font-weight: 700;
+    }
+
+    .badge.pass { background: #e9f8ef; color: #0c6f3c; border: 1px solid #9ad8b6; }
+    .badge.fail { background: #fff1e8; color: #a65000; border: 1px solid #efbf94; }
+    .badge.none { background: #f5f2ec; color: #6d665c; border: 1px solid #ddd4c5; }
+
+    .foot {
+      margin-top: 12px;
+      color: #5f5a50;
+      font-size: 0.85rem;
+      border-top: 1px dashed #d8cfc0;
+      padding-top: 8px;
+    }
+
+    .foot code {
+      background: #f5f0e6;
+      padding: 1px 5px;
+      border-radius: 6px;
+    }
+
+    a { color: #0059b8; text-decoration: none; word-break: break-all; }
+    a:hover { text-decoration: underline; }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr; }
+      textarea, .resultbox { min-height: 220px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <h1>지도 텍스트 링크 변환기</h1>
+      <p>
+        Cloudflare Pages + Worker(Functions) 기반입니다.
+        네이버/카카오 링크를 서로 변환하고, 가능할 때 좌표 거리 검증도 같이 표시합니다.
+      </p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>입력</h2>
+
+        <div class="controls">
+          <label class="field" for="direction">
+            <span>변환 방향</span>
+            <select id="direction">
+              <option value="naver_to_kakao">네이버 -> 카카오</option>
+              <option value="kakao_to_naver">카카오 -> 네이버</option>
+            </select>
+          </label>
+
+          <label class="field" for="maxDistance">
+            <span>거리 기준(m)</span>
+            <input id="maxDistance" type="number" min="0" step="10" value="300" />
+          </label>
+        </div>
+
+        <textarea id="input" spellcheck="false" placeholder="[네이버지도]\n상호명\n주소\nhttps://naver.me/...\n\n..."></textarea>
+
+        <div class="actions">
+          <button class="primary" id="convertBtn">변환하기</button>
+          <button class="ghost" id="sampleBtn">샘플 넣기</button>
+          <button class="ghost" id="clearBtn">초기화</button>
+        </div>
+
+        <div id="status" class="status">대기 중</div>
+      </article>
+
+      <article class="card">
+        <h2>결과</h2>
+        <div id="resultText" class="resultbox"></div>
+
+        <div class="actions">
+          <button class="ghost" id="copyBtn">결과 복사</button>
+        </div>
+
+        <div class="tablewrap">
+          <table id="resultTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>상태</th>
+                <th>입력 상호</th>
+                <th>거리(m)</th>
+                <th>검증</th>
+                <th>변환 링크</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="foot">
+          변환 API는 <code>/api/convert</code> 입니다. 로컬에서는 <code>wrangler pages dev</code>로 실행하세요.
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const sampleNaverText = `[네이버지도]
+일월의제면소
+서울 성북구 개운사길 41-3 1~3층
+https://naver.me/IGs3UqxD
+
+[네이버지도]
+면림
+서울 성북구 개운사길 21-3 1층
+https://naver.me/x7e0US2z
+
+[네이버지도]
+특별식당
+서울 성북구 개운사길 22-6 2층
+https://naver.me/5DZiCXWG
+
+[네이버지도]
+효이당
+서울 성북구 고려대로27길 30-2
+https://naver.me/50BH80WH`;
+
+    const sampleKakaoText = `[카카오맵]
+일월의제면소
+서울 성북구 개운사길 41-3 1-3층
+https://place.map.kakao.com/2073306137
+
+[카카오맵]
+면림
+서울 성북구 개운사길 21-3 1층
+https://place.map.kakao.com/439912842
+
+[카카오맵]
+특별식당
+서울 성북구 개운사길 22-6 2층
+https://place.map.kakao.com/2040703324
+
+[카카오맵]
+효이당
+서울 성북구 고려대로27길 30-2 1층
+https://place.map.kakao.com/1030080486`;
+
+    const inputEl = document.getElementById("input");
+    const directionEl = document.getElementById("direction");
+    const maxDistanceEl = document.getElementById("maxDistance");
+    const statusEl = document.getElementById("status");
+    const resultTextEl = document.getElementById("resultText");
+    const resultTableBody = document.querySelector("#resultTable tbody");
+    const convertBtn = document.getElementById("convertBtn");
+    const sampleBtn = document.getElementById("sampleBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const copyBtn = document.getElementById("copyBtn");
+
+    function setStatus(text, tone = "") {
+      statusEl.textContent = text;
+      statusEl.className = `status ${tone}`.trim();
+    }
+
+    function parseInput(raw) {
+      const blocks = (raw || "")
+        .split(/\n\s*\n+/)
+        .map((b) => b.trim())
+        .filter(Boolean);
+
+      const entries = [];
+
+      for (let i = 0; i < blocks.length; i += 1) {
+        const lines = blocks[i]
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .filter((line) => !/^\[[^\]]+\]$/.test(line));
+
+        const sourceUrl = lines.find((line) => /^https?:\/\//i.test(line)) || "";
+        const nonUrl = lines.filter((line) => !/^https?:\/\//i.test(line));
+
+        const name = nonUrl[0] || "";
+        const address = nonUrl.slice(1).join(" ").trim();
+
+        if (!name && !address && !sourceUrl) continue;
+
+        entries.push({
+          index: i + 1,
+          name,
+          address,
+          sourceUrl,
+          rawBlock: blocks[i],
+        });
+      }
+
+      return entries;
+    }
+
+    function getTargetLabel(direction) {
+      return direction === "naver_to_kakao" ? "[카카오맵]" : "[네이버지도]";
+    }
+
+    function escapeHtml(v) {
+      return String(v)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function escapeAttr(v) {
+      return escapeHtml(v);
+    }
+
+    function badgeForDistancePass(distancePass) {
+      if (distancePass === true) {
+        return '<span class="badge pass">통과</span>';
+      }
+      if (distancePass === false) {
+        return '<span class="badge fail">불통과</span>';
+      }
+      return '<span class="badge none">미측정</span>';
+    }
+
+    function renderResults(results, direction) {
+      const textBlocks = [];
+      const rows = [];
+      const targetLabel = getTargetLabel(direction);
+
+      for (const item of results) {
+        if (item.ok) {
+          textBlocks.push(
+            [
+              targetLabel,
+              item.targetName,
+              item.targetAddress || "",
+              item.targetUrl,
+            ].join("\n")
+          );
+
+          const distanceText = Number.isFinite(item.distanceMeters)
+            ? String(item.distanceMeters)
+            : "-";
+
+          rows.push(`
+            <tr>
+              <td>${item.source.index}</td>
+              <td><span class="pill ok">성공</span></td>
+              <td>${escapeHtml(item.source.name || "(이름 없음)")}</td>
+              <td>${distanceText}</td>
+              <td>${badgeForDistancePass(item.distancePass)}</td>
+              <td><a href="${escapeAttr(item.targetUrl)}" target="_blank" rel="noopener">${escapeHtml(item.targetUrl)}</a></td>
+            </tr>
+          `);
+        } else {
+          textBlocks.push(
+            [
+              targetLabel,
+              item.source.name || "(이름 없음)",
+              item.source.address || "(주소 없음)",
+              `변환 실패: ${item.error}`,
+            ].join("\n")
+          );
+
+          rows.push(`
+            <tr>
+              <td>${item.source.index}</td>
+              <td><span class="pill bad">실패</span></td>
+              <td>${escapeHtml(item.source.name || "(이름 없음)")}</td>
+              <td>-</td>
+              <td>${badgeForDistancePass(null)}</td>
+              <td>-</td>
+            </tr>
+          `);
+        }
+      }
+
+      resultTextEl.textContent = textBlocks.join("\n\n");
+      resultTableBody.innerHTML = rows.join("");
+    }
+
+    async function callConvertApi(payload) {
+      const res = await fetch("/api/convert", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data || !Array.isArray(data.results)) {
+        const message = data && data.error ? data.error : `API 오류 (${res.status})`;
+        throw new Error(message);
+      }
+      return data;
+    }
+
+    async function convertAll() {
+      const entries = parseInput(inputEl.value);
+      const direction = directionEl.value;
+      const maxDistanceMeters = Number(maxDistanceEl.value) || 300;
+
+      if (entries.length === 0) {
+        setStatus("입력 블록을 찾지 못했습니다.", "bad");
+        resultTextEl.textContent = "";
+        resultTableBody.innerHTML = "";
+        return;
+      }
+
+      convertBtn.disabled = true;
+      sampleBtn.disabled = true;
+      clearBtn.disabled = true;
+      copyBtn.disabled = true;
+
+      try {
+        setStatus(`변환 요청 중... (${entries.length}건)`);
+        const data = await callConvertApi({ direction, entries, maxDistanceMeters });
+        renderResults(data.results, direction);
+
+        const successCount = data.results.filter((r) => r.ok).length;
+        const failCount = data.results.length - successCount;
+
+        if (failCount === 0) {
+          setStatus(`완료: ${successCount}건 성공`, "ok");
+        } else if (successCount > 0) {
+          setStatus(`완료: 성공 ${successCount}건, 실패 ${failCount}건`, "warn");
+        } else {
+          setStatus(`완료: 실패 ${failCount}건`, "bad");
+        }
+      } catch (err) {
+        setStatus(err instanceof Error ? err.message : String(err), "bad");
+      } finally {
+        convertBtn.disabled = false;
+        sampleBtn.disabled = false;
+        clearBtn.disabled = false;
+        copyBtn.disabled = false;
+      }
+    }
+
+    sampleBtn.addEventListener("click", () => {
+      inputEl.value = directionEl.value === "naver_to_kakao" ? sampleNaverText : sampleKakaoText;
+      setStatus("샘플 입력 완료");
+    });
+
+    clearBtn.addEventListener("click", () => {
+      inputEl.value = "";
+      resultTextEl.textContent = "";
+      resultTableBody.innerHTML = "";
+      setStatus("초기화됨");
+    });
+
+    convertBtn.addEventListener("click", convertAll);
+
+    directionEl.addEventListener("change", () => {
+      inputEl.value = directionEl.value === "naver_to_kakao" ? sampleNaverText : sampleKakaoText;
+      resultTextEl.textContent = "";
+      resultTableBody.innerHTML = "";
+      setStatus("변환 방향을 바꿨습니다. 샘플도 함께 갱신했습니다.");
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      const text = resultTextEl.textContent.trim();
+      if (!text) {
+        setStatus("복사할 결과가 없습니다.", "warn");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus("결과를 클립보드에 복사했습니다.", "ok");
+      } catch (_err) {
+        setStatus("복사에 실패했습니다. 브라우저 권한을 확인해주세요.", "bad");
+      }
+    });
+
+    inputEl.value = sampleNaverText;
+    setStatus("샘플이 자동으로 채워져 있습니다.");
+  </script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+# Map Link Converter (Pages + Worker)
+
+네이버/카카오 지도 텍스트 블록을 서로 변환하는 Cloudflare Pages + Functions(Worker Runtime) 프로젝트입니다.
+
+## 기능
+
+- `네이버 -> 카카오` 변환
+  - `naver.me` 단축 URL 해석
+  - 카카오 장소 링크(`https://place.map.kakao.com/{id}`) 반환
+- `카카오 -> 네이버` 변환
+  - 카카오 장소 링크에서 정보 조회
+  - 네이버 장소 링크(`https://map.naver.com/p/entry/place/{id}`) 반환
+- 거리 검증
+  - 가능한 경우 좌표를 비교해 거리(m)와 기준 통과 여부 표시
+
+## 폴더 구조
+
+- `public/index.html`: UI
+- `functions/api/convert.js`: 변환 API (Pages Function)
+- `wrangler.toml`: Pages 설정
+
+## 로컬 실행
+
+```bash
+cd map-link-converter
+npx wrangler pages dev public
+```
+
+실행 후 브라우저에서 로컬 URL을 열면 `public/index.html`과 `/api/convert`가 함께 동작합니다.
+
+## 배포
+
+1. Pages 프로젝트 생성(최초 1회)
+
+```bash
+npx wrangler pages project create map-link-converter
+```
+
+2. 배포
+
+```bash
+cd map-link-converter
+npx wrangler pages deploy public --project-name map-link-converter
+```
+
+## 참고
+
+- Free 플랜은 Worker 요청량 제한이 있습니다(일일 요청 수 제한).
+- 네이버/카카오 측 응답 정책 변경 시 파싱 로직 업데이트가 필요할 수 있습니다.
