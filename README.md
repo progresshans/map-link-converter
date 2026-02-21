@@ -10,6 +10,9 @@
 - `카카오 -> 네이버` 변환
   - 카카오 장소 링크에서 정보 조회
   - 네이버 장소 링크(`https://map.naver.com/p/entry/place/{id}`) 반환
+- 자동 감지 모드
+  - 입력 URL 기준으로 각 항목을 자동으로 방향 판별
+  - 네이버/카카오 링크가 섞여 있어도 한 번에 변환 가능
 - 거리 검증
   - 가능한 경우 좌표를 비교해 거리(m)와 기준 통과 여부 표시
 
@@ -22,7 +25,7 @@
 ## 로컬 실행
 
 ```bash
-cd map-link-converter
+cd map-link-converter-cloudflare
 npx wrangler pages dev public
 ```
 
@@ -30,17 +33,28 @@ npx wrangler pages dev public
 
 ## 배포
 
+### 권장: Pages Git 연동
+
+Cloudflare Pages 대시보드에서 GitHub 저장소(`progresshans/map-link-converter-cloudflare`)를 연결하고 아래처럼 설정하세요.
+
+- Framework preset: `None`
+- Build command: 비움
+- Build output directory: `public`
+- Root directory: `/`
+
+### 선택: Wrangler Direct Upload
+
 1. Pages 프로젝트 생성(최초 1회)
 
 ```bash
-npx wrangler pages project create map-link-converter
+npx wrangler pages project create map-link-converter-cloudflare
 ```
 
 2. 배포
 
 ```bash
-cd map-link-converter
-npx wrangler pages deploy public --project-name map-link-converter
+cd map-link-converter-cloudflare
+npx wrangler pages deploy public --project-name map-link-converter-cloudflare
 ```
 
 ## 참고
