@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
   <title>지도 링크 변환기</title>
   <style>
     * { box-sizing: border-box; margin: 0; }
@@ -302,8 +302,9 @@ https://naver.me/x7e0US2z</div>
     <textarea id="input" spellcheck="false" placeholder="상호명&#10;주소&#10;https://naver.me/...&#10;&#10;상호명&#10;주소&#10;https://naver.me/..."></textarea>
 
     <div class="actions">
-      <button class="primary" id="convertBtn">변환</button>
-      <button class="ghost" id="clearBtn">초기화</button>
+      <button class="primary" id="pasteBtn">붙여넣기</button>
+      <button class="primary hidden" id="convertBtn">변환</button>
+      <button class="ghost hidden" id="clearBtn">초기화</button>
     </div>
 
     <div id="status" class="status"></div>
@@ -349,7 +350,7 @@ https://naver.me/x7e0US2z</div>
     const resultTextEl = document.getElementById("resultText");
     const resultTableBody = document.querySelector("#resultTable tbody");
     const convertBtn = document.getElementById("convertBtn");
-
+    const pasteBtn = document.getElementById("pasteBtn");
     const clearBtn = document.getElementById("clearBtn");
     const copyBtn = document.getElementById("copyBtn");
 
@@ -528,12 +529,38 @@ https://naver.me/x7e0US2z</div>
       } catch (err) {
         setStatus(err instanceof Error ? err.message : String(err), "bad");
       } finally {
-        convertBtn.disabled = false;
-
         clearBtn.disabled = false;
         copyBtn.disabled = false;
+        lastConvertedText = inputEl.value;
+        updateActionButtons();
       }
     }
+
+    let lastConvertedText = null;
+
+    function updateActionButtons() {
+      const hasText = inputEl.value.trim().length > 0;
+      pasteBtn.classList.toggle("hidden", hasText);
+      convertBtn.classList.toggle("hidden", !hasText);
+      clearBtn.classList.toggle("hidden", !hasText);
+      convertBtn.disabled = lastConvertedText !== null && inputEl.value === lastConvertedText;
+    }
+
+    inputEl.addEventListener("input", () => {
+      updateActionButtons();
+    });
+
+    pasteBtn.addEventListener("click", async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          inputEl.value = text;
+          updateActionButtons();
+        }
+      } catch (_err) {
+        setStatus("붙여넣기 권한을 확인해주세요.", "bad");
+      }
+    });
 
     clearBtn.addEventListener("click", () => {
       inputEl.value = "";
@@ -541,6 +568,8 @@ https://naver.me/x7e0US2z</div>
       resultTableBody.innerHTML = "";
       resultSection.classList.add("hidden");
       setStatus("");
+      lastConvertedText = null;
+      updateActionButtons();
     });
 
     convertBtn.addEventListener("click", convertAll);
